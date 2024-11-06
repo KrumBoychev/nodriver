@@ -4,7 +4,7 @@ import pathlib
 import secrets
 import sys
 import tempfile
-from typing import Union, List, Optional
+from typing import Union, List, Optional, TypedDict
 from types import MethodType
 import zipfile
 import tempfile
@@ -26,6 +26,13 @@ PathLike = Union[str, pathlib.Path]
 AUTO = None
 
 
+class ProxySettings(TypedDict, total=False):
+    server: str
+    bypass: Optional[str]
+    username: Optional[str]
+    password: Optional[str]
+
+
 class Config:
     """
     Config object
@@ -39,6 +46,7 @@ class Config:
         browser_args: Optional[List[str]] = AUTO,
         sandbox: Optional[bool] = True,
         lang: Optional[str] = "en-US",
+        proxy: Optional[ProxySettings] = None,
         host: str = AUTO,
         port: int = AUTO,
         expert: bool = AUTO,
@@ -62,6 +70,7 @@ class Config:
         :param sandbox: disables sandbox
         :param autodiscover_targets: use autodiscovery of targets
         :param lang: language string to use other than the default "en-US,en;q=0.9"
+        :param proxy: proxy settings like server ([<proxy-scheme>://]<proxy-host>[:<proxy-port>]), username, password etc.
         :param expert: when set to True, enabled "expert" mode.
                This conveys, the inclusion of parameters: --disable-web-security ----disable-site-isolation-trials,
                as well as some scripts and patching useful for debugging (for example, ensuring shadow-root is always in "open" mode)
@@ -74,6 +83,7 @@ class Config:
         :type browser_args: list[str]
         :type sandbox: bool
         :type lang: str
+        :type proxy:  ProxySettings
         :type kwargs: dict
         """
 
@@ -94,6 +104,7 @@ class Config:
         self.browser_executable_path = browser_executable_path
         self.headless = headless
         self.sandbox = sandbox
+        self.proxy = proxy
         self.host = host
         self.port = port
         self.expert = expert

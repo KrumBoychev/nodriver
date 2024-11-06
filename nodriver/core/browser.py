@@ -18,7 +18,7 @@ from .. import cdp
 from . import util
 from . import tab
 from ._contradict import ContraDict
-from .config import PathLike, Config, is_posix
+from .config import PathLike, Config, ProxySettings, is_posix
 from .connection import Connection
 
 logger = logging.getLogger(__name__)
@@ -69,6 +69,7 @@ class Browser:
         browser_executable_path: PathLike = None,
         browser_args: List[str] = None,
         sandbox: bool = True,
+        proxy: typing.Optional[ProxySettings] = None,
         host: str = None,
         port: int = None,
         **kwargs,
@@ -83,6 +84,7 @@ class Browser:
                 browser_executable_path=browser_executable_path,
                 browser_args=browser_args or [],
                 sandbox=sandbox,
+                proxy=proxy,
                 host=host,
                 port=port,
                 **kwargs,
@@ -160,6 +162,32 @@ class Browser:
 
     sleep = wait
     """alias for wait"""
+
+    async def _handle_proxy_auth(self, event: Union[cdp.fetch.AuthRequired, cdp.fetch.RequestPaused]):
+        # Respond to the authentication challenge
+        async def auth_response_cb():
+            await self.connection.send(
+                cdp.fetch.continue_with_auth(
+                    request_id=event.request_id,
+                    auth_challenge_response=cdp.fetch.AuthChallengeResponse(
+                        response="ProvideCredentials",
+                        username=self.config.proxy['username'],
+                        password=self.config.proxy['password'],
+                    ),
+                )
+            )
+            # we can disable the fetch domain once credentials are provided.
+            await self.connection.send(cdp.fetch.disable())
+
+        if type(event) == cdp.fetch.AuthRequired and event.auth_challenge.source == "Proxy":
+            asyncio.create_task(auth_response_cb())
+        elif type(event) == cdp.fetch.RequestPaused:
+            print(event.request_id)
+            asyncio.create_task(
+                self.connection.send(
+                    cdp.fetch.continue_request(request_id=event.request_id)
+                )
+            )
 
     def _handle_target_update(
         self,
@@ -279,6 +307,11 @@ class Browser:
             warnings.warn("ignored! this call has no effect when already running.")
             return
 
+        if self.config.proxy is not None:
+            self.config.add_argument(f"--proxy-server={self.config.proxy['server']}")
+            if self.config.proxy.get("bypass") is not None:
+                self.config.add_argument(f"--proxy-bypass-list={self.config.proxy['bypass']}")
+
         # self.config.update(kwargs)
         connect_existing = False
         if self.config.host is not None and self.config.port is not None:
@@ -362,6 +395,10 @@ class Browser:
             )
 
         self.connection = Connection(self.info.webSocketDebuggerUrl, _owner=self)
+
+        if self.config.proxy is not None and self.config.proxy.get("username") is not None:
+            self.connection.add_handler(cdp.fetch, self._handle_proxy_auth)
+            await self.connection.send(cdp.fetch.enable(handle_auth_requests=True))
 
         if self.config.autodiscover_targets:
             logger.info("enabling autodiscover targets")

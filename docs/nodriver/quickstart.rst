@@ -97,7 +97,8 @@ I'll leave out the async boilerplate here
         user_data_dir="/path/to/existing/profile",  # by specifying it, it won't be automatically cleaned up when finished
         browser_executable_path="/path/to/some/other/browser",
         browser_args=['--some-browser-arg=true', '--some-other-option'],
-        lang="en-US"   # this could set iso-language-code in navigator, not recommended to change
+        lang="en-US",   # this could set iso-language-code in navigator, not recommended to change
+        proxy={"server": "http://myproxy.com:1234", "username": "user", "password": "pwd", "bypass": "192.168.1.0/24"}
     )
     tab = await browser.get('https://somewebsite.com')
 
@@ -113,11 +114,12 @@ I'll leave out the async boilerplate here
 
     config = Config()
     config.headless = False
-    config.user_data_dir="/path/to/existing/profile",  # by specifying it, it won't be automatically cleaned up when finished
-    config.browser_executable_path="/path/to/some/other/browser",
-    config.browser_args=['--some-browser-arg=true', '--some-other-option'],
+    config.user_data_dir="/path/to/existing/profile"  # by specifying it, it won't be automatically cleaned up when finished
+    config.browser_executable_path="/path/to/some/other/browser"
+    config.browser_args=['--some-browser-arg=true', '--some-other-option']
     config.lang="en-US"   # this could set iso-language-code in navigator, not recommended to change
-    )
+    config.proxy={"server": "http://myproxy.com:1234", "username": "user", "password": "pwd", "bypass": "192.168.1.0/24"}
+
 
 
 

@@ -13,7 +13,7 @@ from .element import Element
 
 if typing.TYPE_CHECKING:
     from .browser import Browser, PathLike
-from .config import Config
+from .config import Config, ProxySettings
 from .. import cdp
 
 __registered__instances__: Set[Browser] = set()
@@ -31,6 +31,7 @@ async def start(
     browser_args: Optional[List[str]] = None,
     sandbox: Optional[bool] = True,
     lang: Optional[str] = None,
+    proxy: Optional[ProxySettings] = None,
     host: Optional[str] = None,
     port: Optional[int] = None,
     expert: Optional[bool] = None,
@@ -62,6 +63,10 @@ async def start(
     :param lang: language string
     :type lang: str
 
+    :param proxy: proxy settings like server ([<proxy-scheme>://]<proxy-host>[:<proxy-port>]),
+    username, password etc.
+    :type proxy:  ProxySettings
+
     :param port: if you connect to an existing debuggable session, you can specify the port here
                  if both host and port are provided, nodriver will not start a local chrome browser!
     :type port: int
@@ -86,6 +91,7 @@ async def start(
             browser_args,
             sandbox,
             lang,
+            proxy=proxy,
             host=host,
             port=port,
             expert=expert,
