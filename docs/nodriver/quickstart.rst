@@ -83,6 +83,32 @@ More complete example
         # since asyncio.run never worked (for me)
         uc.loop().run_until_complete(main())
 
+Navigation response status and headers
+========================================
+Retrieve the response status and headers
+
+.. code-block::
+    import asyncio
+    import nodriver as uc
+
+    async def main():
+        browser = await uc.start()
+        # Get the browser main page/tab
+        page = await browser.get()
+        try:
+            response, request = await page.goto("http://httpbin.org/ip", timeout=30)
+            print(response.status)
+            print(response.headers)
+            content = await page.get_content()
+            print(content)
+        except Exception as e:
+            print(e)
+        await asyncio.sleep(2)
+        browser.stop()
+
+    if __name__ == "__main__":
+        uc.loop().run_until_complete(main())
+
 
 Custom starting options
 ============================

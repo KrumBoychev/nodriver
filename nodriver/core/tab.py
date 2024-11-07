@@ -12,6 +12,7 @@ from . import element
 from . import util
 from .config import PathLike
 from .connection import Connection, ProtocolException
+from .navigation_watcher import NavigationWatcher
 from .. import cdp
 
 logger = logging.getLogger(__name__)
@@ -313,6 +314,26 @@ class Tab(Connection):
                 )
             await self.sleep(0.5)
         return items
+
+    async def goto(
+            self, url: str, timeout: int = 30
+    ) -> tuple[cdp.network.Response, cdp.network.Request]:
+        """utilizes the first tab to navigate to the given url.
+
+        :param url: the url to navigate to
+        :param timeout: navigation wait for response timeout
+        :return: response, request
+        """
+        if not self.browser:
+            raise AttributeError(
+                "this page/tab has no browser attribute, so you can't use goto()"
+            )
+        watcher = NavigationWatcher(self, timeout)
+        frame_id, loader_id, *_ = await self.send(cdp.page.navigate(url))
+        await self
+        response = await watcher.get_nav_response()
+        request = watcher.nav_request.request
+        return response, request
 
     async def get(
         self, url="chrome://welcome", new_tab: bool = False, new_window: bool = False
